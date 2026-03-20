@@ -107,7 +107,7 @@ export function getPlatformDisplayName(platform: string): string {
     dailymotion: "Dailymotion",
     unknown: "Direct URL",
   };
-  return names[platform] || platform;
+  return names[platform] || platform || "Unknown";
 }
 
 // ---- Engine Display Name ----

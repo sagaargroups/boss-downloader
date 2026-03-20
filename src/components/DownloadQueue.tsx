@@ -137,7 +137,7 @@ export default function DownloadQueue({
                       {d.metadata?.thumbnail ? (
                         <img src={d.metadata.thumbnail} alt="thumb" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
-                        <span style={{ fontSize: 20 }}>{getPlatformDisplayName(d.platform).charAt(0)}</span>
+                        <span style={{ fontSize: 20 }}>{(getPlatformDisplayName(d.platform) || "U").charAt(0)}</span>
                       )}
                     </div>
                     {/* Title / Description */}
