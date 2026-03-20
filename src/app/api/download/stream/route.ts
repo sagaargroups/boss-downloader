@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
   const format = request.nextUrl.searchParams.get("format") || "mp4";
 
   if (!url) {
-    return NextResponse.json({ success: false, error: "url param required" }, { status: 400 });
+    return new Response(
+      `<script>alert("Download Error:\\nMissing URL parameter.");</script>`,
+      { status: 200, headers: { "Content-Type": "text/html" } }
+    );
   }
 
   // Create temp dir for this download
@@ -52,18 +55,19 @@ export async function GET(request: NextRequest) {
 
     proc.on("error", (err) => {
       cleanup(tmpDir);
-      resolve(NextResponse.json(
-        { success: false, error: `Failed to start yt-dlp: ${err.message}` },
-        { status: 500 }
+      resolve(new Response(
+        `<script>alert("Download Failed: ${err.message}");</script>`,
+        { status: 200, headers: { "Content-Type": "text/html" } }
       ));
     });
 
     proc.on("exit", (code) => {
       if (code !== 0) {
         cleanup(tmpDir);
-        resolve(NextResponse.json(
-          { success: false, error: `yt-dlp failed: ${errorOutput.slice(0, 500)}` },
-          { status: 500 }
+        const safeError = errorOutput.replace(/"/g, "'").replace(/\n/g, "\\n").slice(0, 300);
+        resolve(new Response(
+          `<script>alert("Download Error:\\n${safeError}");</script>`,
+          { status: 200, headers: { "Content-Type": "text/html" } }
         ));
         return;
       }
@@ -72,9 +76,9 @@ export async function GET(request: NextRequest) {
       const files = fs.readdirSync(tmpDir).filter(f => !f.endsWith(".part") && !f.endsWith(".ytdl"));
       if (files.length === 0) {
         cleanup(tmpDir);
-        resolve(NextResponse.json(
-          { success: false, error: "Download completed but no file found" },
-          { status: 500 }
+        resolve(new Response(
+          `<script>alert("Download Error:\\nCompleted but no playable file found.");</script>`,
+          { status: 200, headers: { "Content-Type": "text/html" } }
         ));
         return;
       }

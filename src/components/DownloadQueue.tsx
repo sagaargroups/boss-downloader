@@ -51,41 +51,47 @@ export default function DownloadQueue({
 
         {hasAny && (
           <div style={{ display: "flex", gap: 8 }}>
-            <button
-              className="btn-secondary"
-              onClick={() => onBulkAction("pause-all")}
-              style={{ fontSize: 12, padding: "6px 10px" }}
-            >
-              ⏸ Pause All
-            </button>
-            <button
-              className="btn-secondary"
-              onClick={() => onBulkAction("resume-all")}
-              style={{ fontSize: 12, padding: "6px 10px" }}
-            >
-              ▶ Resume All
-            </button>
-            <button
-              className="btn-secondary"
-              onClick={() => {
-                // To download all queued items via browser
-                downloads.filter(d => d.status === 'queued').forEach(d => {
-                  const params = new URLSearchParams({
-                    url: d.url,
-                    quality: d.quality || "best",
-                    format: d.format || "mp4",
+            {downloads.some(d => ["downloading", "detecting", "merging"].includes(d.status)) ? (
+              <button
+                className="btn-secondary"
+                onClick={() => onBulkAction("pause-all")}
+                style={{ fontSize: 12, padding: "6px 14px", minWidth: 120 }}
+              >
+                ⏸ Pause All
+              </button>
+            ) : downloads.some(d => d.status === "paused") ? (
+              <button
+                className="btn-secondary"
+                onClick={() => onBulkAction("resume-all")}
+                style={{ fontSize: 12, padding: "6px 14px", minWidth: 120 }}
+              >
+                ▶ Resume All
+              </button>
+            ) : downloads.some(d => d.status === "queued") ? (
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  downloads.filter(d => d.status === 'queued').forEach((d, idx) => {
+                    setTimeout(() => {
+                      const params = new URLSearchParams({
+                        url: d.url,
+                        quality: d.quality || "best",
+                        format: d.format || "mp4",
+                      });
+                      const iframe = document.createElement("iframe");
+                      iframe.style.display = "none";
+                      iframe.src = `/api/download/stream?${params.toString()}`;
+                      document.body.appendChild(iframe);
+                      setTimeout(() => document.body.removeChild(iframe), 30000);
+                    }, idx * 1000); // Stagger by 1s to prevent browser blocking multiple downloads
                   });
-                  const iframe = document.createElement("iframe");
-                  iframe.style.display = "none";
-                  iframe.src = `/api/download/stream?${params.toString()}`;
-                  document.body.appendChild(iframe);
-                  setTimeout(() => document.body.removeChild(iframe), 30000);
-                });
-              }}
-              style={{ fontSize: 12, padding: "6px 10px" }}
-            >
-              ⬇ Download All
-            </button>
+                }}
+                style={{ fontSize: 12, padding: "6px 14px", minWidth: 120 }}
+              >
+                ⬇ Download All
+              </button>
+            ) : null}
+
             <button
               className="btn-danger"
               onClick={() => {
@@ -93,7 +99,7 @@ export default function DownloadQueue({
                   onBulkAction("clear");
                 }
               }}
-              style={{ fontSize: 12, padding: "6px 10px" }}
+              style={{ fontSize: 12, padding: "6px 14px" }}
             >
               🗑 Remove All
             </button>
