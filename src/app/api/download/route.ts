@@ -114,6 +114,44 @@ async function handleSingleDownload(body: StartDownloadRequest) {
   }
 
   try {
+    // If it's a playlist, do asynchronous flattening to populate the DB one by one!
+    if (url.includes("list=") || url.includes("/playlist") || url.includes("/sets/")) {
+      // Spawn yt-dlp in the background and return immediately so UI sees it adding items
+      const { spawn } = require("child_process");
+      const proc = spawn("yt-dlp", ["--flat-playlist", "--dump-json", url]);
+
+      proc.stdout.on("data", async (data: Buffer) => {
+        const lines = data.toString().split("\n").filter(Boolean);
+        for (const line of lines) {
+          try {
+            const info = JSON.parse(line);
+            const videoUrl = info.webpage_url || info.url || url;
+            const singleDetection = detectPlatform(videoUrl);
+            await createDownload({
+              url: videoUrl,
+              title: info.title || "Playlist Item",
+              platform: singleDetection.isValid ? singleDetection.platform : "unknown",
+              engine: engine || singleDetection.recommendedEngine,
+              status: "queued",
+              quality: quality || "best",
+              format: format || "mp4",
+              progress: 0,
+            });
+          } catch (e) {
+            // ignore JSON parse errors on partial chunks
+          }
+        }
+      });
+
+      proc.on("error", (err: any) => console.error("Playlist parse error", err));
+
+      return NextResponse.json({
+        success: true,
+        data: { id: "playlist", url, status: "parsing", title: "Adding Playlist..." },
+      });
+    }
+
+    // Normal single video download
     const download = await createDownload({
       url,
       platform: detection.platform,
@@ -123,12 +161,6 @@ async function handleSingleDownload(body: StartDownloadRequest) {
       format: format || "mp4",
       progress: 0,
     });
-
-    // Fire and forget — start the actual download process
-    // DISABLE: User requested no saving on server, only direct browser stream.
-    // startDownload(download).catch((err) => {
-    //   console.error(`[API] Background download failed for ${download.id}:`, err);
-    // });
 
     return NextResponse.json({
       success: true,

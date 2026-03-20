@@ -269,28 +269,6 @@ export default function UrlInput({ onSubmit, isLoading, selectedEngine }: UrlInp
           )}
         </button>
 
-        {/* Direct browser download */}
-        {validCount === 1 && (
-          <button
-            className="btn-secondary"
-            onClick={() => {
-              const url = detectedUrls.find((d) => d.isValid)?.url;
-              if (url) {
-                const params = new URLSearchParams({ url, quality, format });
-                const iframe = document.createElement("iframe");
-                iframe.style.display = "none";
-                iframe.src = `/api/download/stream?${params.toString()}`;
-                document.body.appendChild(iframe);
-                // The browser will handle the download. We remove the iframe after a while.
-                setTimeout(() => document.body.removeChild(iframe), 30000);
-              }
-            }}
-            style={{ fontSize: 13, padding: "8px 14px" }}
-            title="Download directly to your device via browser Save As"
-          >
-            ⬇ Download Now
-          </button>
-        )}
       </div>
     </div>
   );
