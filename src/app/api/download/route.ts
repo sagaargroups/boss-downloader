@@ -162,6 +162,11 @@ async function handleSingleDownload(body: StartDownloadRequest) {
       progress: 0,
     });
 
+    // Start the download immediately in the background server manager
+    startDownload(download).catch((err) => {
+      console.error(`[API] Background download failed for ${download.id}:`, err);
+    });
+
     return NextResponse.json({
       success: true,
       data: download,
@@ -240,6 +245,11 @@ async function handleBulkDownload(body: BulkDownloadRequest) {
         quality: quality || "best",
         format: format || "mp4",
         progress: 0,
+      });
+
+      // Start the download immediately in the background server manager
+      startDownload(download).catch((err) => {
+        console.error(`[API] Background download failed for ${download.id}:`, err);
       });
 
       results.push(download);

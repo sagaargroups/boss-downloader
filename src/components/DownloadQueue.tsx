@@ -78,12 +78,8 @@ export default function DownloadQueue({
                         quality: d.quality || "best",
                         format: d.format || "mp4",
                       });
-                      const iframe = document.createElement("iframe");
-                      iframe.style.display = "none";
-                      iframe.src = `/api/download/stream?${params.toString()}`;
-                      document.body.appendChild(iframe);
-                      setTimeout(() => document.body.removeChild(iframe), 30000);
-                    }, idx * 1000); // Stagger by 1s to prevent browser blocking multiple downloads
+                      window.open(`/api/download/stream?${params.toString()}`, "_blank");
+                    }, idx * 1000); // Stagger by 1s to prevent browser blocking multiple popups
                   });
                 }}
                 style={{ fontSize: 12, padding: "6px 14px", minWidth: 120 }}
@@ -173,18 +169,21 @@ export default function DownloadQueue({
                 </td>
                 <td style={{ padding: "12px 8px", textAlign: "right" }}>
                   <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-                    {d.status === "queued" && (
-                      <button className="btn-secondary" style={{ padding: "4px 8px", fontSize: 12 }} title="Download" onClick={() => {
+                    {d.status === "downloading" && (
+                      <button className="btn-secondary" style={{ padding: "4px 8px", fontSize: 12 }} title="Pause" onClick={() => onAction(d.id, "pause")}>⏸</button>
+                    )}
+                    {d.status === "paused" && (
+                      <button className="btn-secondary" style={{ padding: "4px 8px", fontSize: 12 }} title="Resume" onClick={() => onAction(d.id, "resume")}>▶️</button>
+                    )}
+                    {d.status !== "failed" && (
+                      <button className="btn-secondary" style={{ padding: "4px 8px", fontSize: 12 }} title="Download to Device (Browser DM)" onClick={() => {
                         const params = new URLSearchParams({
                           url: d.url,
                           quality: d.quality || "best",
                           format: d.format || "mp4",
                         });
-                        const iframe = document.createElement("iframe");
-                        iframe.style.display = "none";
-                        iframe.src = `/api/download/stream?${params.toString()}`;
-                        document.body.appendChild(iframe);
-                        setTimeout(() => document.body.removeChild(iframe), 30000);
+                        // User specifically requested to open new tab so it assigns to browser DM
+                        window.open(`/api/download/stream?${params.toString()}`, "_blank");
                       }}>⬇️</button>
                     )}
                     {d.status === "failed" && (

@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getDownloads, getDownloadsByStatus, updateDownload, deleteDownload } from "@/lib/db/supabase";
+import { pauseDownload, startDownload } from "@/lib/executor";
 
 export async function GET() {
   try {
@@ -59,7 +60,10 @@ export async function POST(request: NextRequest) {
       case "pause-all": {
         const downloading = await getDownloadsByStatus("downloading");
         for (const d of downloading) {
-          await updateDownload(d.id, { status: "paused" });
+          const inMemory = await pauseDownload(d.id);
+          if (!inMemory) {
+            await updateDownload(d.id, { status: "paused" });
+          }
         }
         return NextResponse.json({
           success: true,
@@ -71,6 +75,7 @@ export async function POST(request: NextRequest) {
         const paused = await getDownloadsByStatus("paused");
         for (const d of paused) {
           await updateDownload(d.id, { status: "queued" });
+          startDownload({ ...d, status: "queued" } as any).catch(console.error);
         }
         return NextResponse.json({
           success: true,
